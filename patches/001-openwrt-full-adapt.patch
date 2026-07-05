@@ -1,0 +1,62 @@
+diff -Nur node-red-5.0.1-orig/package.json node-red-5.0.1/package.json
+--- node-red-5.0.1-orig/package.json
++++ node-red-5.0.1/package.json
+@@ -44,12 +44,9 @@
+   "dependencies": {
+     "@node-red/util": "3.0.2",
+     "basic-auth": "2.0.1",
+-    "electron": "^30.0.0",
+-    "electron-builder": "^24.13.3",
+     "express": "4.19.2",
+-    "nw": "^0.89.0",
+     "ws": "8.18.0"
+-  }
++  }
+
+diff -Nur node-red-5.0.1-orig/settings.js.template node-red-5.0.1/settings.js.template
+--- node-red-5.0.1-orig/settings.js.template
++++ node-red-5.0.1/settings.js.template
+@@ -15,7 +15,7 @@
+  */
+
+ // By default, all user data is stored in the Node-RED user directory ~/.node-red
+-process.env.NODE_RED_USERDIR = process.env.HOME + '/.node-red';
++process.env.NODE_RED_USERDIR = '/root/node-red-data';
+
+ // The httpAdminRoot setting specifies the root url of the admin web interface
+ // If set to false, the admin interface will not be available
+@@ -28,11 +28,11 @@
+ // httpAdminRoot:"/red",
+
+ // The httpNodeRoot setting specifies the root url of the http nodes
+-httpNodeRoot: "/",
++httpNodeRoot: "/nodered",
+
+ // The port number Node-RED listens on
+-uiPort: 1880,
++uiPort: 1888,
+
+ // Maximum number of messages to buffer in memory for each node
++nodeMessageBufferMaxLength: 2000,
+
+@@ -476,7 +476,7 @@
+     // Enable or disable the sending of telemetry data
+     // https://nodered.org/docs/user-guide/telemetry
+     telemetry: {
+-        enabled: true,
++        enabled: false,
+         // Set to false to disable the sending of usage statistics
+         usage: true,
+         // Set to false to disable the sending of error reports
+@@ -506,7 +506,7 @@
+     // If true, Node-RED will check for updates on startup
+-updateCheck: true,
++updateCheck: false,
+
+     editorTheme: {
+         projects: {
+             // To enable the Projects feature, set this to true
+-            enabled: true
++            enabled: false
+         }
+     },
