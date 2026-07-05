@@ -11,41 +11,38 @@ jobs:
   sync-node-red:
     runs-on: ubuntu-latest
     steps:
-      # 1. 拉取你自己仓库完整代码
+      # 1. 拉取当前仓库完整代码
       - name: 检出当前仓库代码
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # 2. 配置Git提交身份
+      # 2. 配置Git提交身份，避免commit报错
       - name: 配置Git提交者
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-      # 3. 获取官方最新稳定正式版（匹配vX.X.X，过滤beta/rc测试版）
-      - name: 获取官方最新版本号
+      # 3. 调用GitHub官方API，直接读取最新正式Release（最稳定，不会抓取旧tag）
+      - name: API获取Node-RED最新正式版本
         id: get_latest_ver
         run: |
-          # 拉取全部tag，仅保留 v数字.数字.数字 稳定版，排除beta/rc预发布版
-          ALL_TAGS=$(git ls-remote --tags --refs https://github.com/node-red/node-red.git \
-            | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+$')
-          # 按版本号升序排序，取最后一行=最新版本
-          LATEST_TAG=$(echo "$ALL_TAGS" | sort -V | tail -n1)
-          # 去掉前缀v，得到纯版本号
+          # 请求官方仓库最新release接口
+          LATEST_TAG=$(curl -s https://api.github.com/repos/node-red/node-red/releases/latest | jq -r '.tag_name')
+          # 去除前缀v，得到纯数字版本号
           LATEST_VER=${LATEST_TAG#v}
-          echo "当前Node-RED最新稳定版本: $LATEST_VER"
-          # 写入全局环境变量供后续步骤使用
+          echo "官方最新Release版本: $LATEST_VER"
+          # 写入全局环境变量
           echo "LATEST_VER=$LATEST_VER" >> "$GITHUB_ENV"
 
-      # 4. 更新Makefile内PKG_VERSION版本号
+      # 4. 替换Makefile中的版本号
       - name: 更新Makefile版本
         run: |
           sed -i "s/^PKG_VERSION:=.*/PKG_VERSION:=$LATEST_VER/" Makefile
           git add Makefile
 
-      # 5. 提交版本更新并推送仓库
-      - name: 提交更新
+      # 5. 提交并推送更新
+      - name: 提交版本变更
         run: |
           git commit -m "同步上游Node-RED v$LATEST_VER，更新编译版本" || echo "版本已是最新，无变更无需提交"
           git push origin main
