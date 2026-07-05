@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 # 软件包基础信息
 PKG_NAME:=node-red
-PKG_VERSION:=0.2.0
+PKG_VERSION:=5.0.1
 PKG_RELEASE:=1
 
 # 上游官方源码地址（后续同步工作流自动更新版本号）
