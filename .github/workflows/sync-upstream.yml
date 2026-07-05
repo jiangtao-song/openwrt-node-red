@@ -1,0 +1,48 @@
+# 自动同步官方node-red上游源码并更新OpenWrt Makefile版本
+name: 同步Node-RED官方上游源码
+on:
+  # 每日UTC凌晨1点自动执行
+  schedule:
+    - cron: '0 1 * * *'
+  # 支持网页手动一键同步
+  workflow_dispatch:
+
+jobs:
+  sync-node-red:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. 拉取你自己仓库完整代码
+      - name: 检出当前仓库代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 2. 配置Git提交身份
+      - name: 配置Git提交者
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      # 3. 获取官方最新版本号，正确写入环境变量
+      - name: 获取官方最新版本号
+        id: get_latest_ver
+        run: |
+          # 拉取官方仓库所有release标签，筛选v开头稳定版本并取最新
+          LATEST_TAG=$(git ls-remote --tags --refs https://github.com/node-red/node-red.git \
+            | grep -o 'v[0-9.]*$' | sort -V | tail -n1)
+          LATEST_VER=${LATEST_TAG#v}
+          echo "最新上游版本: $LATEST_VER"
+          # 标准格式写入GitHub环境变量，供后续步骤全局读取
+          echo "LATEST_VER=$LATEST_VER" >> "$GITHUB_ENV"
+
+      # 4. 更新Makefile内PKG_VERSION版本号（shell内直接使用$LATEST_VER，不使用${{ }}）
+      - name: 更新Makefile版本
+        run: |
+          sed -i "s/^PKG_VERSION:=.*/PKG_VERSION:=$LATEST_VER/" Makefile
+          git add Makefile
+
+      # 5. 提交版本更新并推送仓库
+      - name: 提交更新
+        run: |
+          git commit -m "同步上游Node-RED v$LATEST_VER，更新编译版本" || echo "版本已是最新，无变更无需提交"
+          git push origin main
