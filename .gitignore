@@ -1,0 +1,13 @@
+# OpenWrt编译临时文件
+build_dir/
+dl/
+tmp/
+*.ipk
+*.tar.gz
+*.orig
+*.rej
+# 编辑器缓存
+.DS_Store
+.vscode/
+.idea/
+*.swp
