@@ -23,19 +23,22 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-      # 3. 获取官方最新版本号，正确写入环境变量
+      # 3. 获取官方最新稳定正式版（匹配vX.X.X，过滤beta/rc测试版）
       - name: 获取官方最新版本号
         id: get_latest_ver
         run: |
-          # 拉取官方仓库所有release标签，筛选v开头稳定版本并取最新
-          LATEST_TAG=$(git ls-remote --tags --refs https://github.com/node-red/node-red.git \
-            | grep -o 'v[0-9.]*$' | sort -V | tail -n1)
+          # 拉取全部tag，仅保留 v数字.数字.数字 稳定版，排除beta/rc预发布版
+          ALL_TAGS=$(git ls-remote --tags --refs https://github.com/node-red/node-red.git \
+            | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+$')
+          # 按版本号升序排序，取最后一行=最新版本
+          LATEST_TAG=$(echo "$ALL_TAGS" | sort -V | tail -n1)
+          # 去掉前缀v，得到纯版本号
           LATEST_VER=${LATEST_TAG#v}
-          echo "最新上游版本: $LATEST_VER"
-          # 标准格式写入GitHub环境变量，供后续步骤全局读取
+          echo "当前Node-RED最新稳定版本: $LATEST_VER"
+          # 写入全局环境变量供后续步骤使用
           echo "LATEST_VER=$LATEST_VER" >> "$GITHUB_ENV"
 
-      # 4. 更新Makefile内PKG_VERSION版本号（shell内直接使用$LATEST_VER，不使用${{ }}）
+      # 4. 更新Makefile内PKG_VERSION版本号
       - name: 更新Makefile版本
         run: |
           sed -i "s/^PKG_VERSION:=.*/PKG_VERSION:=$LATEST_VER/" Makefile
